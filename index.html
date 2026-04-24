@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bunny's Sales Velocity Command Center</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+
+body[data-theme="dark"]{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2333;--bg4:#21262d;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);
+  --text1:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --accent:#58a6ff;--accent-bg:rgba(88,166,255,0.10);
+  --kpi1:#58a6ff;--kpi2:#3fb950;--kpi3:#f0883e;--kpi4:#bc8cff;--kpi5:#ff7b72;
+  --card-shadow:none;--topbar-bd:rgba(255,255,255,0.08);
+  --grid:rgba(255,255,255,0.04);--tick:#6e7681;
+  --tt-bg:#1c2333;--tt-bd:rgba(255,255,255,0.10);
+  --sp-track:rgba(255,255,255,0.08);
+  --font:'DM Sans',sans-serif;--mono:'Space Mono',monospace;
+}
+body[data-theme="light"]{
+  --bg:#f0f2f5;--bg2:#ffffff;--bg3:#f5f6f8;--bg4:#e8eaed;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.18);
+  --text1:#111827;--text2:#4b5563;--text3:#9ca3af;
+  --accent:#2563eb;--accent-bg:rgba(37,99,235,0.08);
+  --kpi1:#2563eb;--kpi2:#16a34a;--kpi3:#ea580c;--kpi4:#7c3aed;--kpi5:#dc2626;
+  --card-shadow:0 1px 4px rgba(0,0,0,0.07);--topbar-bd:rgba(0,0,0,0.09);
+  --grid:rgba(0,0,0,0.05);--tick:#9ca3af;
+  --tt-bg:#ffffff;--tt-bd:rgba(0,0,0,0.12);
+  --sp-track:rgba(0,0,0,0.08);
+  --font:'DM Sans',sans-serif;--mono:'Space Mono',monospace;
+}
+body[data-theme="powerbi"]{
+  --bg:#201f1e;--bg2:#252423;--bg3:#292827;--bg4:#323130;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text1:#f3f2f1;--text2:#a19f9d;--text3:#797775;
+  --accent:#f2c811;--accent-bg:rgba(242,200,17,0.10);
+  --kpi1:#f2c811;--kpi2:#00b7c3;--kpi3:#e0602b;--kpi4:#a66bdb;--kpi5:#01b8aa;
+  --card-shadow:none;--topbar-bd:rgba(255,255,255,0.07);
+  --grid:rgba(255,255,255,0.04);--tick:#797775;
+  --tt-bg:#292827;--tt-bd:rgba(255,255,255,0.10);
+  --sp-track:rgba(255,255,255,0.07);
+  --font:'Segoe UI','DM Sans',sans-serif;--mono:'Space Mono',monospace;
+}
+
+body{background:var(--bg);color:var(--text1);font-family:var(--font);transition:background .25s,color .25s;}
+
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:54px;background:var(--bg2);
+  border-bottom:1px solid var(--topbar-bd);
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  transition:background .25s,border-color .25s;
+}
+.logo-area{display:flex;align-items:center;gap:11px;flex-shrink:0;}
+.logo-img{width:32px;height:32px;border-radius:7px;object-fit:contain;background:#fff;padding:2px;}
+.brand-name{font-size:14px;font-weight:600;color:var(--text1);letter-spacing:-.3px;white-space:nowrap;}
+.brand-sub{font-size:9px;color:var(--text3);font-family:var(--mono);letter-spacing:1.3px;text-transform:uppercase;}
+.dash-title{font-size:11px;color:var(--text2);font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;text-align:center;}
+.topbar-right{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.status-area{display:flex;align-items:center;gap:5px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--kpi2);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.status-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);white-space:nowrap;}
+
+.theme-sw{display:flex;align-items:center;gap:3px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:3px;}
+.th-btn{padding:4px 9px;border-radius:5px;border:none;background:transparent;font-size:10px;font-family:var(--mono);color:var(--text3);cursor:pointer;transition:all .15s;letter-spacing:.5px;}
+.th-btn:hover{color:var(--text1);}
+.th-btn.active{background:var(--accent);color:#000;font-weight:700;}
+body[data-theme="light"] .th-btn.active{color:#fff;}
+body[data-theme="dark"]  .th-btn.active{color:#0d1117;}
+
+.main-layout{display:flex;position:fixed;top:54px;left:0;right:0;bottom:0;}
+
+.sidebar{
+  width:232px;min-width:232px;background:var(--bg2);
+  border-right:1px solid var(--border);padding:15px 12px;
+  overflow-y:auto;display:flex;flex-direction:column;gap:15px;
+  transition:background .25s,border-color .25s;
+}
+.sidebar::-webkit-scrollbar{width:3px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+.f-label{display:block;font-size:9px;color:var(--text3);font-family:var(--mono);letter-spacing:1.8px;text-transform:uppercase;margin-bottom:5px;}
+.f-search{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text1);font-size:12px;font-family:var(--font);outline:none;transition:border-color .2s;margin-bottom:5px;}
+.f-search:focus{border-color:var(--accent);}
+.f-search::placeholder{color:var(--text3);}
+.cb-list{display:flex;flex-direction:column;gap:2px;max-height:100px;overflow-y:auto;}
+.cb-list::-webkit-scrollbar{width:3px;}
+.cb-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.cb-row{display:flex;align-items:center;gap:7px;padding:4px 7px;border-radius:5px;cursor:pointer;transition:background .12s;}
+.cb-row:hover{background:var(--bg3);}
+.cb-row input{accent-color:var(--accent);width:12px;height:12px;cursor:pointer;flex-shrink:0;}
+.cb-row label{font-size:11px;color:var(--text2);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:165px;}
+.week-wrap{display:flex;flex-wrap:wrap;gap:4px;}
+.wk-btn{padding:4px 9px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:10px;font-family:var(--mono);cursor:pointer;transition:all .15s;}
+.wk-btn:hover{border-color:var(--accent);color:var(--accent);}
+.wk-btn.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:700;}
+body[data-theme="light"] .wk-btn.active{color:#fff;}
+body[data-theme="dark"]  .wk-btn.active{color:#0d1117;}
+.kpi-btn{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;transition:all .15s;text-align:left;width:100%;margin-bottom:4px;}
+.kpi-btn:hover{background:var(--bg3);border-color:var(--border2);}
+.kpi-btn.active{border-color:var(--accent);background:var(--accent-bg);}
+.kpi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.kpi-lbl{font-size:11px;color:var(--text2);}
+.kpi-btn.active .kpi-lbl{color:var(--text1);font-weight:500;}
+
+.content{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:14px;background:var(--bg);transition:background .25s;}
+.content::-webkit-scrollbar{width:4px;}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:11px;}
+.kpi-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 14px 12px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s,background .25s,box-shadow .25s;box-shadow:var(--card-shadow);}
+.kpi-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.kpi-accent{position:absolute;top:0;left:0;width:3px;height:100%;}
+.kpi-card-lbl{font-size:9px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.kpi-card-val{font-size:26px;font-weight:600;color:var(--text1);font-family:var(--mono);line-height:1;margin-bottom:3px;transition:color .25s;}
+body[data-theme="powerbi"] .kpi-card-val{color:var(--accent);}
+.kpi-card-sub{font-size:10px;color:var(--text3);}
+
+.chart-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:17px;box-shadow:var(--card-shadow);transition:background .25s,border-color .25s,box-shadow .25s;}
+.chart-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:15px;flex-wrap:wrap;gap:10px;}
+.chart-title{font-size:13px;font-weight:500;color:var(--text1);}
+.chart-sub-lbl{font-size:10px;color:var(--text3);margin-top:3px;}
+.legend{display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);}
+.leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:9px;}
+.spinner{width:28px;height:28px;border:2px solid var(--sp-track);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.s-icon{font-size:28px;opacity:.3;}
+.s-msg{font-size:12px;color:var(--text3);}
+.s-sub{font-size:10px;color:var(--text3);opacity:.6;}
+
+@media(max-width:768px){
+  html,body{overflow:auto;}
+  .main-layout{flex-direction:column;position:static;margin-top:54px;}
+  .sidebar{width:100%;min-width:unset;border-right:none;border-bottom:1px solid var(--border);}
+  .dash-title{display:none;}
+  .content{padding:12px;}
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="topbar">
+  <div class="logo-area">
+    <img class="logo-img" src="https://i.ibb.co/5XpmYYZz/image.png" alt="Bunny's Logo" onerror="this.style.display='none'">
+    <div>
+      <div class="brand-name">Bunny's Pvt Ltd</div>
+      <div class="brand-sub">Sales Intelligence</div>
+    </div>
+  </div>
+  <div class="dash-title">Sales Velocity Command Center</div>
+  <div class="topbar-right">
+    <div class="theme-sw">
+      <button class="th-btn active" id="th-dark"    onclick="setTheme('dark')">DARK</button>
+      <button class="th-btn"        id="th-light"   onclick="setTheme('light')">LIGHT</button>
+      <button class="th-btn"        id="th-powerbi" onclick="setTheme('powerbi')">PBI</button>
+    </div>
+    <div class="status-area">
+      <span class="status-dot"></span>
+      <span class="status-lbl" id="data-status">Loading…</span>
+    </div>
+  </div>
+</div>
+
+<div class="main-layout">
+  <div class="sidebar">
+    <div>
+      <span class="f-label">Distributor</span>
+      <input class="f-search" id="dist-search" placeholder="Search…" oninput="renderCB('dist')">
+      <div class="cb-list" id="dist-list"></div>
+    </div>
+    <div>
+      <!-- Channel field from data.json is used as the "Category" filter -->
+      <span class="f-label">Channel</span>
+      <input class="f-search" id="cat-search" placeholder="Search…" oninput="renderCB('cat')">
+      <div class="cb-list" id="cat-list"></div>
+    </div>
+    <div>
+      <span class="f-label">Week</span>
+      <div class="week-wrap">
+        <button class="wk-btn active" onclick="setWeek('All')">All</button>
+        <button class="wk-btn" onclick="setWeek('W1')">W1</button>
+        <button class="wk-btn" onclick="setWeek('W2')">W2</button>
+        <button class="wk-btn" onclick="setWeek('W3')">W3</button>
+        <button class="wk-btn" onclick="setWeek('W4')">W4</button>
+        <button class="wk-btn" onclick="setWeek('W5')">W5</button>
+      </div>
+    </div>
+    <div>
+      <span class="f-label">KPI View</span>
+      <button class="kpi-btn active" id="kpi-ctn"   onclick="setKpi('ctn')">  <span class="kpi-dot" id="dot-ctn"></span>  <span class="kpi-lbl">Sales in CTN</span></button>
+      <button class="kpi-btn"        id="kpi-bills" onclick="setKpi('bills')"><span class="kpi-dot" id="dot-bills"></span><span class="kpi-lbl">Bills</span></button>
+      <button class="kpi-btn"        id="kpi-lpo"   onclick="setKpi('lpo')">  <span class="kpi-dot" id="dot-lpo"></span>  <span class="kpi-lbl">LPO</span></button>
+      <button class="kpi-btn"        id="kpi-obs"   onclick="setKpi('obs')">  <span class="kpi-dot" id="dot-obs"></span>  <span class="kpi-lbl">OBs Worked</span></button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="cards-grid">
+      <div class="kpi-card"><div class="kpi-accent" id="acc-ctn"></div>  <div class="kpi-card-lbl">Total CTN Sold</div> <div class="kpi-card-val" id="c-ctn">--</div>  <div class="kpi-card-sub">cartons</div></div>
+      <div class="kpi-card"><div class="kpi-accent" id="acc-bills"></div><div class="kpi-card-lbl">Total Bills</div>    <div class="kpi-card-val" id="c-bills">--</div><div class="kpi-card-sub">invoices</div></div>
+      <div class="kpi-card"><div class="kpi-accent" id="acc-lpo"></div>  <div class="kpi-card-lbl">Avg LPO</div>        <div class="kpi-card-val" id="c-lpo">--</div>  <div class="kpi-card-sub">lines per order</div></div>
+      <div class="kpi-card"><div class="kpi-accent" id="acc-obs"></div>  <div class="kpi-card-lbl">Peak OBs / Day</div> <div class="kpi-card-val" id="c-obs">--</div>  <div class="kpi-card-sub">order bookers</div></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-hdr">
+        <div>
+          <div class="chart-title">Day Wise KPI Performance by Distributor</div>
+          <div class="chart-sub-lbl" id="chart-sub">Initialising…</div>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div id="chart-wrap" style="position:relative;width:100%;height:320px;display:none;">
+        <canvas id="mainChart" role="img" aria-label="Day wise KPI area chart">Chart loading…</canvas>
+      </div>
+      <div id="state-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════ THEME COLOURS ═══════ */
+const TC = {
+  dark:    {kpi1:'#58a6ff',kpi2:'#3fb950',kpi3:'#f0883e',kpi4:'#bc8cff'},
+  light:   {kpi1:'#2563eb',kpi2:'#16a34a',kpi3:'#ea580c',kpi4:'#7c3aed'},
+  powerbi: {kpi1:'#f2c811',kpi2:'#00b7c3',kpi3:'#e0602b',kpi4:'#a66bdb'},
+};
+const KPI_KEYS  = ['ctn','bills','lpo','obs'];
+const KPI_NAMES = {ctn:'Sales CTN',bills:'Bills',lpo:'LPO',obs:'OBs'};
+
+let currentTheme = 'dark';
+
+function setTheme(t){
+  currentTheme = t;
+  document.body.setAttribute('data-theme',t);
+  ['dark','light','powerbi'].forEach(id=>document.getElementById('th-'+id).classList.toggle('active',id===t));
+  paintKpiColors();
+  if(myChart && dailyCache.length) renderChart(dailyCache);
+}
+function clr(){ return TC[currentTheme]; }
+function hexRgba(hex,a){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function cssVar(n){ return getComputedStyle(document.body).getPropertyValue(n).trim(); }
+function paintKpiColors(){
+  const c=clr();
+  KPI_KEYS.forEach((k,i)=>{
+    const col=c['kpi'+(i+1)];
+    const dot=document.getElementById('dot-'+k);
+    const acc=document.getElementById('acc-'+k);
+    if(dot) dot.style.background=col;
+    if(acc) acc.style.background=col;
+  });
+  buildLegend();
+}
+function buildLegend(){
+  const c=clr();
+  document.getElementById('legend').innerHTML=KPI_KEYS.map((k,i)=>`
+    <div class="leg-item"><span class="leg-dot" style="background:${c['kpi'+(i+1)]}"></span><span>${KPI_NAMES[k]}</span></div>`).join('');
+}
+
+/* ═══════ STATE ═══════ */
+let allData=[],allDists=[],allCats=[];
+let selDists=new Set(),selCats=new Set();
+let selWeek='All',selKpi='ctn';
+let myChart=null,dailyCache=[];
+
+/* ═══════ HELPERS ═══════ */
+function getWeek(d){return d<=7?'W1':d<=14?'W2':d<=21?'W3':d<=28?'W4':'W5';}
+function fmtDate(o){
+  if(!o) return '';
+  return o.getDate().toString().padStart(2,'0')+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][o.getMonth()];
+}
+function safe(v,d=2){if(v===null||v===undefined||isNaN(v))return '--';return Number(v).toLocaleString('en',{maximumFractionDigits:d});}
+
+/* ─── parseRow: field names matched exactly to data.json keys ─── */
+function parseRow(r){
+  const ds = (r['Date'] || '').toString().trim();
+  const doObj = ds ? new Date(ds) : null;
+  const salesCtn = parseFloat(r['Sales CTN']) || 0;
+  return {
+    date:        ds,
+    dateObj:     doObj,
+    day:         doObj && !isNaN(doObj) ? doObj.getDate() : 0,
+    week:        doObj && !isNaN(doObj) ? getWeek(doObj.getDate()) : '',
+    invoice:     (r['Invoice Number']    || '').toString().trim(),
+    obCode:      (r['Order Booker Code'] || '').toString().trim(),
+    distributor: (r['Distributor Name']  || '').toString().trim(),
+    channel:     (r['Channel']           || '').toString().trim(),   // mapped as "category"
+    skuCode:     (r['SKU Code']          || '').toString().trim(),
+    outletCode:  (r['Outlet Code']       || '').toString().trim(),
+    salesCtn:    salesCtn,
+  };
+}
+
+function aggregate(data){
+  const m={};
+  data.forEach(r=>{
+    if(!r.date || !r.dateObj || isNaN(r.dateObj)) return;
+    if(!m[r.date]) m[r.date]={date:r.date,dateObj:r.dateObj,inv:new Set(),obs:new Set(),rows:0,ctn:0};
+    const d=m[r.date];
+    if(r.invoice) d.inv.add(r.invoice);
+    if(r.obCode)  d.obs.add(r.obCode);
+    d.rows++;
+    d.ctn += r.salesCtn;
+  });
+  return Object.values(m)
+    .sort((a,b)=>a.dateObj-b.dateObj)
+    .map(d=>({
+      date:    d.date,
+      dateObj: d.dateObj,
+      bills:   d.inv.size,
+      obs:     d.obs.size,
+      ctn:     Math.round(d.ctn * 100) / 100,
+      lpo:     d.inv.size > 0 ? Math.round((d.rows / d.inv.size) * 100) / 100 : 0,
+    }));
+}
+
+/* ═══════ AUTO LOAD data.json ═══════ */
+window.addEventListener('DOMContentLoaded',()=>{
+  paintKpiColors();
+  showState('loading');
+  fetch('./data.json')
+    .then(r=>{
+      if(!r.ok) throw new Error('HTTP '+r.status+' — could not load data.json');
+      return r.json();
+    })
+    .then(json=>{
+      /* Accept plain array or wrapped { data:[…] } / { records:[…] } */
+      const rows = Array.isArray(json) ? json : (json.data || json.records || json.rows || []);
+      if(!rows.length) throw new Error('data.json loaded but contains no rows');
+      processData(rows);
+    })
+    .catch(err=>{
+      showState('error', err.message);
+      document.getElementById('data-status').textContent='Load failed';
+    });
+});
+
+function processData(rows){
+  allData  = rows.map(parseRow).filter(r => r.date && r.dateObj && !isNaN(r.dateObj));
+  allDists = [...new Set(allData.map(r=>r.distributor).filter(Boolean))].sort();
+  allCats  = [...new Set(allData.map(r=>r.channel).filter(Boolean))].sort();
+  selDists = new Set(allDists);
+  selCats  = new Set(allCats);
+  document.getElementById('data-status').textContent = allData.length.toLocaleString()+' rows';
+  renderCB('dist');
+  renderCB('cat');
+  updateDashboard();
+}
+
+/* ═══════ FILTERS ═══════ */
+function renderCB(type){
+  const isD = type==='dist';
+  const q   = document.getElementById(isD?'dist-search':'cat-search').value.toLowerCase();
+  const arr = (isD ? allDists : allCats).filter(i=>i.toLowerCase().includes(q));
+  const sel = isD ? selDists : selCats;
+  const el  = document.getElementById(isD?'dist-list':'cat-list');
+  el.innerHTML = arr.map(v=>{
+    const esc = v.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="cb-row" onclick="toggleF('${type}','${esc}')">
+      <input type="checkbox" ${sel.has(v)?'checked':''} onclick="event.stopPropagation();toggleF('${type}','${esc}')">
+      <label title="${v}">${v}</label>
+    </div>`;
+  }).join('');
+}
+function toggleF(type,val){
+  const s = type==='dist' ? selDists : selCats;
+  s.has(val) ? s.delete(val) : s.add(val);
+  renderCB(type);
+  updateDashboard();
+}
+function setWeek(w){
+  selWeek=w;
+  document.querySelectorAll('.wk-btn').forEach(b=>b.classList.toggle('active',b.textContent.trim()===w));
+  updateDashboard();
+}
+function setKpi(k){
+  selKpi=k;
+  KPI_KEYS.forEach(id=>document.getElementById('kpi-'+id).classList.toggle('active',id===k));
+  updateDashboard();
+}
+
+/* ═══════ UPDATE ═══════ */
+function updateDashboard(){
+  /* Filter uses r.channel (mapped from data.json "Channel") for category filter */
+  const f = allData.filter(r =>
+    selDists.has(r.distributor) &&
+    selCats.has(r.channel) &&
+    (selWeek==='All' || r.week===selWeek)
+  );
+  if(!f.length){ updateCards([]); showState('nodata'); return; }
+  dailyCache = aggregate(f);
+  updateCards(dailyCache);
+  renderChart(dailyCache);
+}
+
+function updateCards(d){
+  const tot = k => d.reduce((s,r)=>s+r[k],0);
+  const avg = k => d.length ? tot(k)/d.length : 0;
+  document.getElementById('c-ctn').textContent   = d.length ? safe(tot('ctn'),1)  : '--';
+  document.getElementById('c-bills').textContent = d.length ? safe(tot('bills'),0): '--';
+  document.getElementById('c-lpo').textContent   = d.length ? safe(avg('lpo'),1)  : '--';
+  document.getElementById('c-obs').textContent   = d.length ? Math.max(...d.map(r=>r.obs)) : '--';
+}
+
+/* ═══════ CHART ═══════ */
+function renderChart(daily){
+  const c      = clr();
+  const colMap = {ctn:c.kpi1,bills:c.kpi2,lpo:c.kpi3,obs:c.kpi4};
+  const col    = colMap[selKpi];
+  const fill   = hexRgba(col,0.12);
+  const labels = daily.map(d=>fmtDate(d.dateObj));
+  const values = daily.map(d=>d[selKpi]);
+  const gridC  = cssVar('--grid');
+  const tickC  = cssVar('--tick');
+  const ttBg   = cssVar('--tt-bg');
+  const ttBd   = cssVar('--tt-bd');
+  const tx1    = cssVar('--text1');
+  const tx2    = cssVar('--text2');
+
+  document.getElementById('chart-sub').textContent=`${daily.length} day(s) · metric: ${KPI_NAMES[selKpi]}`;
+  buildLegend();
+  showState('chart');
+
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  if(myChart){ myChart.destroy(); myChart=null; }
+
+  myChart = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:KPI_NAMES[selKpi],data:values,
+        borderColor:col,backgroundColor:fill,
+        fill:true,tension:0.42,
+        pointBackgroundColor:col,pointBorderColor:col,
+        pointRadius:daily.length<20?5:3,pointHoverRadius:7,borderWidth:2,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:ttBg,borderColor:ttBd,borderWidth:1,
+          titleColor:tx1,bodyColor:tx2,padding:13,
+          titleFont:{family:"'Space Mono',monospace",size:11},
+          bodyFont:{family:"'Space Mono',monospace",size:11},
+          callbacks:{
+            title:items=>items[0].label,
+            label:()=>'',
+            afterBody:items=>{
+              const d=daily[items[0].dataIndex];
+              return[
+                '  CTN   : '+safe(d.ctn,2),
+                '  Bills : '+d.bills,
+                '  LPO   : '+safe(d.lpo,2),
+                '  OBs   : '+d.obs,
+              ];
+            }
+          }
+        }
+      },
+      scales:{
+        x:{grid:{color:gridC,drawBorder:false},ticks:{color:tickC,font:{size:10},autoSkip:daily.length>22,maxRotation:45}},
+        y:{grid:{color:gridC,drawBorder:false},ticks:{color:tickC,font:{size:10},callback:v=>Number.isInteger(v)?v:v.toFixed(1)},beginAtZero:true}
+      }
+    }
+  });
+}
+
+/* ═══════ STATE OVERLAY ═══════ */
+function showState(type,msg=''){
+  const cw=document.getElementById('chart-wrap');
+  const sw=document.getElementById('state-wrap');
+  if(type==='chart'){cw.style.display='block';sw.innerHTML='';return;}
+  cw.style.display='none';
+  const t={
+    loading:`<div class="state-box"><div class="spinner"></div><div class="s-msg" style="margin-top:10px;font-family:monospace;font-size:11px;">Loading data.json…</div></div>`,
+    error:  `<div class="state-box"><div class="s-icon" style="color:var(--kpi5)">&#9888;</div><div class="s-msg" style="color:var(--kpi5)">${msg}</div><div class="s-sub">Ensure data.json is in the same folder as index.html</div></div>`,
+    nodata: `<div class="state-box"><div class="s-icon">&#9671;</div><div class="s-msg">No data for selected filters</div><div class="s-sub">Adjust distributor, channel, or week</div></div>`,
+  };
+  sw.innerHTML=t[type]||'';
+}
+</script>
+</body>
+</html>
